@@ -38,11 +38,14 @@ public class LogicService {
     }
 
     
-    public int hcf(List<Integer> nums) {
+   public int hcf(List<Integer> nums) {
+        if (nums == null || nums.isEmpty()) return 0;
+
         int result = nums.get(0);
-        for (int n : nums)
+        for (int n : nums) {
             result = gcd(result, n);
-        return result;
+        }
+        return Math.abs(result);
     }
 
     
@@ -68,5 +71,3 @@ public LogicService(GeminiService geminiService) {
         return geminiService.fetchSingleWordAnswer(question);
     }
 }
-
-
