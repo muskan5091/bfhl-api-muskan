@@ -16,35 +16,39 @@ public class GeminiService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     public String fetchSingleWordAnswer(String question) {
+
         try {
             String apiUrl =
-                "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key="
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
                 + apiKey;
 
             Map<String, Object> payload = Map.of(
                 "contents", List.of(
                     Map.of(
                         "parts", List.of(
-                            Map.of("text", question)
+                            Map.of(
+                                "text",
+                                question + ". Answer in one word only."
+                            )
                         )
                     )
                 )
             );
 
-            restTemplate.postForObject(apiUrl, payload, Map.class);
+            Map response = restTemplate.postForObject(apiUrl, payload, Map.class);
+
+            
+            List candidates = (List) response.get("candidates");
+            Map first = (Map) candidates.get(0);
+            Map content = (Map) first.get("content");
+            List parts = (List) content.get("parts");
+            String text = (String) ((Map) parts.get(0)).get("text");
+
+            return text.trim();
 
         } catch (Exception e) {
-            e.getMessage();
+            e.printStackTrace();
+            return "AI Error";
         }
-
-        String lower = question.toLowerCase();
-
-        if (
-            lower.contains("capital") &&
-            (lower.contains("maharashtra") || lower.contains("maharastra"))
-        ) {
-            return "Mumbai";
-        }
-        return "Unknown";
     }
 }
