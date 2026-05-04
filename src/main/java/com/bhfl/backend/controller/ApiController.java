@@ -1,12 +1,12 @@
 package com.bhfl.backend.controller;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.bhfl.backend.service.LogicService;
 
@@ -21,52 +21,87 @@ public class ApiController {
     }
 
     @GetMapping("/health")
-    public Map<String, Object> health() {
-        Map<String, Object> res = new HashMap<>();
-        res.put("is_success ", true);
-        res.put("official_email ", EMAIL);
-        return res;
+    public ResponseEntity<Map<String, Object>> health() {
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("is_success", true);
+        res.put("official_email", EMAIL);
+        return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
-   @PostMapping(value = "/bfhl", produces = "application/json")
-public Map<String, Object> bfhl(@RequestBody Map<String, Object> body) {
+    
+    @PostMapping("/bfhl")
+    public ResponseEntity<Map<String, Object>> bfhl(@RequestBody Map<String, Object> body) {
 
-    Map<String, Object> res = new HashMap<>();
+        Map<String, Object> res = new LinkedHashMap<>();
 
-    if (body == null || body.size() != 1) {
-        res.put("is_success ", false);
-        return res;
+        try {
+
+            if (body == null || body.size() != 1) {
+                return error("Invalid request: only one key allowed", HttpStatus.BAD_REQUEST);
+            }
+
+            String key = body.keySet().iterator().next();
+            Object value = body.get(key);
+
+            Object result;
+
+            switch (key) {
+
+                case "fibonacci":
+                    if (!(value instanceof Number))
+                        return error("fibonacci requires integer", HttpStatus.BAD_REQUEST);
+
+                    result = logicService.fibonacci(((Number) value).intValue());
+                    break;
+
+                case "prime":
+                    if (!(value instanceof List))
+                        return error("prime requires array", HttpStatus.BAD_REQUEST);
+
+                    result = logicService.primes((List<Integer>) value);
+                    break;
+
+                case "lcm":
+                    if (!(value instanceof List))
+                        return error("lcm requires array", HttpStatus.BAD_REQUEST);
+
+                    result = logicService.lcm((List<Integer>) value);
+                    break;
+
+                case "hcf":
+                    if (!(value instanceof List))
+                        return error("hcf requires array", HttpStatus.BAD_REQUEST);
+
+                    result = logicService.hcf((List<Integer>) value);
+                    break;
+
+                case "AI":
+                    if (!(value instanceof String))
+                        return error("AI requires string", HttpStatus.BAD_REQUEST);
+
+                    result = logicService.aiAnswer(value.toString());
+                    break;
+
+                default:
+                    return error("Invalid key", HttpStatus.BAD_REQUEST);
+            }
+
+            res.put("is_success", true);
+            res.put("official_email", EMAIL);
+            res.put("data", result);
+
+            return new ResponseEntity<>(res, HttpStatus.OK);
+
+        } catch (Exception e) {
+            return error("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    String key = body.keySet().iterator().next();
-    Object value = body.get(key);
-    Object result;
-
-    switch (key) {
-        case "fibonacci":
-            result = logicService.fibonacci((Integer) value);
-            break;
-        case "prime":
-            result = logicService.primes((java.util.List<Integer>) value);
-            break;
-        case "lcm":
-            result = logicService.lcm((java.util.List<Integer>) value);
-            break;
-        case "hcf":
-            result = logicService.hcf((java.util.List<Integer>) value);
-            break;
-        case "AI":
-            result = logicService.aiAnswer(value.toString());
-            break;
-        default:
-            res.put("is_success", false);
-            return res;
+    private ResponseEntity<Map<String, Object>> error(String msg, HttpStatus status) {
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("is_success", false);
+        res.put("official_email", EMAIL);
+        res.put("error", msg);
+        return new ResponseEntity<>(res, status);
     }
-
-    res.put("is_success ", true);
-    res.put("official_email ", EMAIL);
-    res.put("data ", result);
-    return res;
-}
-
 }
